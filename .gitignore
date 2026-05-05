@@ -1,0 +1,35 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+run/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Fabric Loom cache
+.loom-cache/
+remappedSrc/
+
+# Logs
+logs/
+crash-reports/
+
+# Mod outputs (keep the source, not the build artifacts)
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
