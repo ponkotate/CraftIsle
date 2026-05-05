@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import org.ponkotate.craftisle.registry.ModBlocks;
 import org.ponkotate.craftisle.registry.ModItems;
+import org.ponkotate.craftisle.registry.ModWorldGen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ public class CraftIsle implements ModInitializer {
 	public void onInitialize() {
 		ModBlocks.initialize();
 		ModItems.initialize();
+		ModWorldGen.initialize();
 
 		LOGGER.info("Craft Isle initialized!");
 	}
