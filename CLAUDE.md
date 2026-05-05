@@ -12,8 +12,8 @@
 - **Minecraft バージョン**: 26.1.x
 - **Mod ローダー**: Fabric Loader
 - **ビルドシステム**: Gradle + Fabric Loom
-- **言語**: Java 21
-- **マッピング**: Yarn
+- **言語**: Java 25
+- **マッピング**: Mojang 公式マッピング（Fabric Loom 1.16+ はデフォルトで Mojang マッピングを使用）
 
 ## ビルド & 実行
 
@@ -44,15 +44,26 @@
 ```
 src/
   main/
-    java/org/ponkotate/craftisle/   # Mod ソースコード
+    java/org/ponkotate/craftisle/   # 共通（サーバー・クライアント両サイド）コード
       CraftIsle.java                # メイン初期化クラス（ModInitializer 実装）
-      client/                       # クライアント専用コード（ClientModInitializer 実装）
-      mixin/                        # バニラ挙動を変更する Mixin クラス
+      mixin/                        # 共通 Mixin クラス
       block/                        # カスタムブロック
       item/                         # カスタムアイテム
       entity/                       # カスタムエンティティ
-      screen/                       # GUI 画面（クライアント専用）
       registry/                     # レジストリヘルパー（ブロック・アイテム・エンティティ等）
+    resources/
+      data/craft_isle/              # サーバーデータ（レシピ・ルートテーブル・タグ・進捗）
+        recipes/
+        loot_tables/
+        tags/
+      fabric.mod.json               # Mod メタデータとエントリポイント
+      craft_isle.mixins.json        # 共通 Mixin 設定
+  client/
+    java/org/ponkotate/craftisle/
+      client/                       # クライアント専用コード（ClientModInitializer 実装）
+        CraftIsleClient.java
+        mixin/                      # クライアント専用 Mixin
+        screen/                     # GUI 画面
     resources/
       assets/craft_isle/            # クライアントアセット（テクスチャ・モデル・言語・サウンド）
         blockstates/
@@ -65,23 +76,19 @@ src/
         lang/
           en_us.json
           ja_jp.json
-      data/craft_isle/              # サーバーデータ（レシピ・ルートテーブル・タグ・進捗）
-        recipes/
-        loot_tables/
-        tags/
-      fabric.mod.json               # Mod メタデータとエントリポイント
-      craft_isle.mixins.json        # Mixin 設定
+      craft_isle.client.mixins.json # クライアント専用 Mixin 設定
 build.gradle                        # ビルド設定（依存関係・Loom 設定）
-gradle.properties                   # バージョン管理（Minecraft・Mod・マッピング）
+gradle.properties                   # バージョン管理（Minecraft・Mod・依存関係）
 settings.gradle
 ```
 
 ## 重要ファイル
 
 - **`fabric.mod.json`** — Mod ID・バージョン・エントリポイント・依存関係・説明。新しいエントリポイントや Mixin を追加する際はここを編集する。
-- **`gradle.properties`** — すべてのバージョン指定（Minecraft・Fabric Loader・Fabric API・Yarn マッピング）。バージョンを変更する際はまずここを編集する。
-- **`build.gradle`** — Loom 設定・追加依存関係（`modImplementation`・`include`）。
-- **`craft_isle.mixins.json`** — すべての Mixin クラスを列挙する。新しい Mixin はここへの登録が必須。
+- **`gradle.properties`** — すべてのバージョン指定（Minecraft・Fabric Loader・Fabric API）。バージョンを変更する際はまずここを編集する。
+- **`build.gradle`** — Loom 設定・追加依存関係（`implementation`・`include`）。
+- **`craft_isle.mixins.json`** — 共通 Mixin クラスを列挙する。共通 Mixin はここへの登録が必須。
+- **`craft_isle.client.mixins.json`** — クライアント専用 Mixin クラスを列挙する（`src/client/resources/` 配下）。
 
 ## 開発規約
 
@@ -102,11 +109,12 @@ public class CraftIsle implements ModInitializer {
 }
 
 // org.ponkotate.craftisle.registry.ModBlocks
+// Mojang マッピング: net.minecraft.core.Registry / BuiltInRegistries / net.minecraft.resources.Identifier
 public class ModBlocks {
-    public static final Block MY_BLOCK = register("my_block", new Block(AbstractBlock.Settings.create()));
+    public static final Block MY_BLOCK = register("my_block", new Block(new BlockBehaviour.Properties()));
 
     private static Block register(String name, Block block) {
-        return Registry.register(Registries.BLOCK, Identifier.of(CraftIsle.MOD_ID, name), block);
+        return Registry.register(BuiltInRegistries.BLOCK, Identifier.fromNamespaceAndPath(CraftIsle.MOD_ID, name), block);
     }
 
     public static void initialize() {} // ModInitializer から呼び出して静的初期化を発火させる
@@ -129,7 +137,7 @@ public class ModBlocks {
 - 各クラスを `craft_isle.mixins.json` に登録する。
 - 互換性維持のため `@Overwrite` より `@Inject`・`@Redirect`・`@ModifyVariable` を優先する。
 - `@Overwrite` より `CallbackInfo` / `CallbackInfoReturnable` を使う。
-- クラスとメソッドの指定は **Yarn 名**を使用する（中間名や公式名ではない）。
+- クラスとメソッドの指定は **Mojang 公式名**を使用する（Fabric Loom 1.16+ はデフォルトで Mojang マッピングを使用）。
 
 ```java
 @Mixin(SomeVanillaClass.class)
@@ -147,7 +155,7 @@ public class SomeVanillaClassMixin {
 
 ### Identifier 規約
 
-Identifier は必ず `Identifier.of(CraftIsle.MOD_ID, "name")` の形で生成する。Mod ID 文字列を複数箇所にハードコードせず、定数を参照する。
+Identifier は必ず `Identifier.fromNamespaceAndPath(CraftIsle.MOD_ID, "name")` の形で生成する。Mod ID 文字列を複数箇所にハードコードせず、定数を参照する。
 
 ### ネットワーキング（必要な場合）
 
@@ -159,9 +167,9 @@ Fabric の `ServerPlayNetworking` / `ClientPlayNetworking` と `CustomPayload` �
 
 ```groovy
 // build.gradle — 依存関係の記述例
-modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-modImplementation "maven.modrinth:modid:version"    // Modrinth
-include modImplementation("some.library:lib:1.0.0") // 同梱（JiJ）
+implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+implementation "maven.modrinth:modid:version"    // Modrinth
+include implementation("some.library:lib:1.0.0") // 同梱（JiJ）
 ```
 
 ## テスト
@@ -181,13 +189,13 @@ Fabric にゲームロジック向けの組み込みユニットテストフレ�
 
 - Fabric Wiki: https://fabricmc.net/wiki/
 - Fabric API Javadoc: https://maven.fabricmc.net/docs/fabric-api-latest/
-- Yarn マッピングビューア: https://lambdaurora.dev/tools/yarn_viewer/
 - コミュニティ: https://discord.gg/v6v4pMv (Fabric Discord)
 
 ## よくある落とし穴
 
-- **Mixin 登録漏れ** — `@Mixin` クラスが `craft_isle.mixins.json` に記載されていない場合、何も起こらず静かに無視される。
-- **サーバーでのクライアントコード** — `main` エントリポイントで `MinecraftClient`・`Screen`・描画クラスを参照すると専用サーバーがクラッシュする。
+- **Mixin 登録漏れ** — `@Mixin` クラスが対応する `*.mixins.json` に記載されていない場合、何も起こらず静かに無視される。クライアント専用 Mixin は `craft_isle.client.mixins.json`（`src/client/resources/`）に登録する。
+- **split source set でのクライアントコード配置ミス** — クライアント専用クラスは `src/client/java/` に置く。`src/main/java/` に置くと Loom がコンパイルエラーを出す。
 - **Identifier の名前空間ミス** — 名前空間が間違っていると、レシピ参照・ルートテーブル・レジストリ検索がすべて壊れる。
-- **Loom キャッシュの古さ** — `minecraft_version` や `mappings_version` を変更した後は、リビルド前に `./gradlew clean` を実行する。
-- **Fabric API バージョン不一致** — Fabric API は Minecraft バージョンごとに異なる。`gradle.properties` の `fabric_version` が対象 MC バージョンに対応しているか確認する。
+- **Loom キャッシュの古さ** — `minecraft_version` を変更した後は、リビルド前に `./gradlew clean` を実行する。
+- **Fabric API バージョン不一致** — Fabric API は Minecraft バージョンごとに異なる。`gradle.properties` の `fabric_api_version` が対象 MC バージョンに対応しているか確認する。
+- **Mojang マッピング名の使用** — Fabric Loom 1.16+ では Yarn ではなく Mojang 公式マッピングを使用する。クラス名・メソッド名は Mojang 命名規則に従う（例: `Identifier` は `net.minecraft.resources.Identifier`）。
