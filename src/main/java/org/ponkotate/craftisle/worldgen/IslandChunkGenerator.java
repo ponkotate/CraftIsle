@@ -33,18 +33,12 @@ import org.ponkotate.craftisle.CraftIsle;
 
 public class IslandChunkGenerator extends ChunkGenerator {
 
-    // Grid parameters — guaranteed edge-to-edge distance:
-    //   min_center_dist = CELL_SIZE - 2*OFFSET_MAX = 1200
-    //   min_edge_dist   = 1200 - 2*ISLAND_RADIUS   = 960
-    private static final int CELL_SIZE            = 1500;
-    private static final int OFFSET_MAX           = 150;
-    private static final int ISLAND_RADIUS        = 120;
     private static final int SEA_LEVEL            = 63;
     private static final int OCEAN_FLOOR_Y        = 0;
     private static final int MIN_Y                = -64;
     private static final int GEN_DEPTH            = 384;
     private static final int ISLAND_MAX_ELEVATION = 50;
-    private static final int SOIL_DEPTH            = 10;
+    private static final int SOIL_DEPTH           = 10;
 
     public static final MapCodec<IslandChunkGenerator> CODEC = RecordCodecBuilder.mapCodec(
         instance -> instance.group(
@@ -83,6 +77,9 @@ public class IslandChunkGenerator extends ChunkGenerator {
                     noiseSeed1     = factory.fromHashOf("noise1").nextLong();
                     noiseSeed2     = factory.fromHashOf("noise2").nextLong();
                     noiseSeed3     = factory.fromHashOf("noise3").nextLong();
+                    if (getBiomeSource() instanceof IslandBiomeSource islandBiomeSource) {
+                        islandBiomeSource.setGridSeed(islandGridSeed);
+                    }
                     initializedState = randomState;
                 }
             }
@@ -125,56 +122,13 @@ public class IslandChunkGenerator extends ChunkGenerator {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Island grid
-    // ─────────────────────────────────────────────────────────────
-
-    // Cell (0,0) is always at the world origin so Minecraft's default spawn
-    // search (starting from x=0,z=0) lands on the island.
-    private long[] islandCenterForCell(int cx, int cz) {
-        if (cx == 0 && cz == 0) {
-            return new long[]{0L, 0L};
-        }
-        long h = islandGridSeed;
-        h ^= (long) cx * 0x9e3779b97f4a7c15L;
-        h ^= (long) cz * 0x6c62272e07bb0142L;
-        h ^= h >>> 33;
-        h *= 0xff51afd7ed558ccdL;
-        h ^= h >>> 33;
-        long rx = (h & 0xFFFFFFFFL) % (OFFSET_MAX * 2L + 1) - OFFSET_MAX;
-        long rz = ((h >>> 32) & 0xFFFFFFFFL) % (OFFSET_MAX * 2L + 1) - OFFSET_MAX;
-        return new long[]{(long) cx * CELL_SIZE + rx, (long) cz * CELL_SIZE + rz};
-    }
-
-    /** Returns {centerX, centerZ, distSq} for the nearest island center. */
-    private long[] nearestIslandCenter(int wx, int wz) {
-        int cellX = Math.floorDiv(wx, CELL_SIZE);
-        int cellZ = Math.floorDiv(wz, CELL_SIZE);
-        long bestDistSq = Long.MAX_VALUE;
-        long bestX = 0, bestZ = 0;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                long[] c = islandCenterForCell(cellX + dx, cellZ + dz);
-                long ddx = c[0] - wx;
-                long ddz = c[1] - wz;
-                long d2  = ddx * ddx + ddz * ddz;
-                if (d2 < bestDistSq) {
-                    bestDistSq = d2;
-                    bestX = c[0];
-                    bestZ = c[1];
-                }
-            }
-        }
-        return new long[]{bestX, bestZ, bestDistSq};
-    }
-
-    // ─────────────────────────────────────────────────────────────
     // Terrain height
     // ─────────────────────────────────────────────────────────────
 
     private int computeSurfaceY(int wx, int wz) {
-        long[] nearest = nearestIslandCenter(wx, wz);
+        long[] nearest = IslandGrid.nearestIslandCenter(islandGridSeed, wx, wz);
         double dist = Math.sqrt(nearest[2]);
-        double t = Math.max(0.0, (ISLAND_RADIUS - dist) / ISLAND_RADIUS);
+        double t = Math.max(0.0, (IslandGrid.ISLAND_RADIUS - dist) / IslandGrid.ISLAND_RADIUS);
         double islandFactor = t * t * (3.0 - 2.0 * t); // smoothstep [0,1]
         if (islandFactor <= 0.0) {
             return OCEAN_FLOOR_Y;
@@ -184,10 +138,10 @@ public class IslandChunkGenerator extends ChunkGenerator {
                      + valueNoise(noiseSeed2, wx, wz, 22) * 0.28
                      + valueNoise(noiseSeed3, wx, wz,  9) * 0.12; // ≈ [-1, 1]
         double peakFactor = (noise + 1.0) * 0.5; // [0, 1]
-        // islandFactor shapes the island; peakFactor creates multiple peaks.
-        // Valleys (peakFactor≈0) stay near sea level → natural trails.
-        int y = (int)(SEA_LEVEL + islandFactor * ISLAND_MAX_ELEVATION * (0.10 + peakFactor * 0.90));
-        return Math.max(OCEAN_FLOOR_Y + 1, y);
+        // Smooth transition from ocean floor to island peaks: no vertical cliff at island border.
+        // islandFactor shapes the island; peakFactor creates multiple peaks within it.
+        int y = (int)(OCEAN_FLOOR_Y + islandFactor * (SEA_LEVEL - OCEAN_FLOOR_Y + ISLAND_MAX_ELEVATION * (0.10 + peakFactor * 0.90)));
+        return Math.max(OCEAN_FLOOR_Y, y);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -206,11 +160,6 @@ public class IslandChunkGenerator extends ChunkGenerator {
         int minBlockZ = chunk.getPos().getMinBlockZ();
         int minY      = chunk.getMinY();
         int height    = chunk.getHeight();
-
-        Heightmap.primeHeightmaps(chunk, Set.of(
-            Heightmap.Types.OCEAN_FLOOR_WG,
-            Heightmap.Types.WORLD_SURFACE_WG
-        ));
 
         BlockState bedrock = Blocks.BEDROCK.defaultBlockState();
         BlockState stone   = Blocks.STONE.defaultBlockState();
@@ -242,6 +191,14 @@ public class IslandChunkGenerator extends ChunkGenerator {
                 }
             }
         }
+
+        // Prime heightmaps after all blocks are placed so they are computed in one scan
+        // rather than being updated incrementally on every setBlockState call.
+        Heightmap.primeHeightmaps(chunk, Set.of(
+            Heightmap.Types.OCEAN_FLOOR_WG,
+            Heightmap.Types.WORLD_SURFACE_WG
+        ));
+
         return CompletableFuture.completedFuture(chunk);
     }
 
@@ -384,7 +341,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
     @Override
     public void addDebugScreenInfo(List<String> info, RandomState randomState, BlockPos pos) {
         if (initializedState == null) return;
-        long[] nearest = nearestIslandCenter(pos.getX(), pos.getZ());
+        long[] nearest = IslandGrid.nearestIslandCenter(islandGridSeed, pos.getX(), pos.getZ());
         int dist = (int) Math.sqrt(nearest[2]);
         info.add("Island: center=(" + nearest[0] + "," + nearest[1] + ") dist=" + dist);
     }

@@ -5,8 +5,9 @@
       "generator": {
         "type": "craft_isle:island",
         "biome_source": {
-          "type": "minecraft:fixed",
-          "biome": "minecraft:forest"
+          "type": "craft_isle:island",
+          "land_biome": "minecraft:forest",
+          "ocean_biome": "minecraft:ocean"
         }
       }
     },
