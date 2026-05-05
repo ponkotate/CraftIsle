@@ -55,7 +55,7 @@ allowed-tools: Bash(git *)
 
 3. ユーザーが引数 `$ARGUMENTS` でヒントを渡した場合はそれを参考にする。
 
-4. コミットメッセージをユーザーに提示し、確認を取った上で `git commit` を実行する。
+4. 確認なしで即座に `git commit` を実行する。
 
    ```bash
    git commit -m "<確定したメッセージ>"
