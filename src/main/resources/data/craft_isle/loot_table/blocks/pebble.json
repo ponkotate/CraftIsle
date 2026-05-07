@@ -1,0 +1,67 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "craft_isle:pebble"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:any_of",
+          "terms": [
+            { "condition": "minecraft:block_state_property", "block": "craft_isle:pebble", "properties": { "count": "2" } },
+            { "condition": "minecraft:block_state_property", "block": "craft_isle:pebble", "properties": { "count": "3" } },
+            { "condition": "minecraft:block_state_property", "block": "craft_isle:pebble", "properties": { "count": "4" } }
+          ]
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "craft_isle:pebble"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:any_of",
+          "terms": [
+            { "condition": "minecraft:block_state_property", "block": "craft_isle:pebble", "properties": { "count": "3" } },
+            { "condition": "minecraft:block_state_property", "block": "craft_isle:pebble", "properties": { "count": "4" } }
+          ]
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "craft_isle:pebble"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "craft_isle:pebble",
+          "properties": { "count": "4" }
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "craft_isle:pebble"
+        }
+      ]
+    }
+  ]
+}

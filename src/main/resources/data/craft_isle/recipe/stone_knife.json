@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P",
+    "P"
+  ],
+  "key": {
+    "P": { "item": "craft_isle:pebble" }
+  },
+  "result": {
+    "id": "craft_isle:stone_knife",
+    "count": 1
+  }
+}

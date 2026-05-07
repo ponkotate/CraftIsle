@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.ponkotate.craftisle.CraftIsle;
+import org.ponkotate.craftisle.block.PebbleBlock;
+import org.ponkotate.craftisle.registry.ModBlocks;
 
 public class IslandChunkGenerator extends ChunkGenerator {
 
@@ -52,6 +54,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
     private volatile long noiseSeed1;
     private volatile long noiseSeed2;
     private volatile long noiseSeed3;
+    private volatile long pebbleSeed;
 
     public IslandChunkGenerator(BiomeSource biomeSource) {
         super(biomeSource);
@@ -77,6 +80,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
                     noiseSeed1     = factory.fromHashOf("noise1").nextLong();
                     noiseSeed2     = factory.fromHashOf("noise2").nextLong();
                     noiseSeed3     = factory.fromHashOf("noise3").nextLong();
+                    pebbleSeed     = factory.fromHashOf("pebble").nextLong();
                     if (getBiomeSource() instanceof IslandBiomeSource islandBiomeSource) {
                         islandBiomeSource.setGridSeed(islandGridSeed);
                     }
@@ -248,6 +252,12 @@ public class IslandChunkGenerator extends ChunkGenerator {
                             mutablePos.set(wx, topSolid - i, wz);
                             chunk.setBlockState(mutablePos, dirt);
                         }
+                    }
+                    // ~5% chance to scatter pebbles on inland grass
+                    if (hash2D(pebbleSeed, wx, wz) < 0.05) {
+                        mutablePos.set(wx, topSolid + 1, wz);
+                        int count = (int)(hash2D(~pebbleSeed, wx, wz) * 4) + 1;
+                        chunk.setBlockState(mutablePos, ModBlocks.PEBBLE.defaultBlockState().setValue(PebbleBlock.COUNT, count));
                     }
                 }
             }
