@@ -2,6 +2,8 @@ package org.ponkotate.craftisle.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -53,6 +55,23 @@ public class PebbleBlock extends Block {
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return Shapes.empty();
+    }
+
+    @Override
+    public boolean canBeReplaced(BlockState state, BlockPlaceContext context) {
+        if (context.getItemInHand().getItem() instanceof BlockItem blockItem && blockItem.getBlock() == this) {
+            return state.getValue(COUNT) < 4;
+        }
+        return false;
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState existing = context.getLevel().getBlockState(context.getClickedPos());
+        if (existing.is(this)) {
+            return defaultBlockState().setValue(COUNT, Math.min(4, existing.getValue(COUNT) + 1));
+        }
+        return defaultBlockState();
     }
 
     @Override
