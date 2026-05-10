@@ -80,6 +80,102 @@ Mixin クラスを作っても `*.mixins.json` に登録しないと**何も起�
 
 ---
 
+## バニラブロックのプロパティ変更（hardness など）
+
+### BlockState は初期化時にプロパティをキャッシュする
+
+`BlockBehaviour.Properties.destroyTime` を `onInitialize()` から書き換えても**効果がない**。
+
+理由：Minecraft は `Blocks` クラスのロード時（Mod 初期化より前）に `BlockState.initCache()` を実行し、各 BlockState に `destroySpeed` をキャッシュしてしまう。後から `Properties` を書き換えてもキャッシュには反映されない。
+
+### 正しいアプローチ：`getDestroyProgress` をインターセプト
+
+`BlockBehaviour.getDestroyProgress` に `@Inject` して、対象ブロックのときだけ戻り値を上書きする。
+
+```java
+@Mixin(BlockBehaviour.class)
+public class BlockHardnessMixin {
+    // 石を素手で壊す相当: hardness 1.5 × divisor 100 = 150
+    @Unique private static final float CRAFT_ISLE_HARDNESS_FACTOR = 150.0f;
+
+    @Unique private static volatile Set<Block> craftIsle$hardenedBlocks = null;
+
+    @Unique
+    private static Set<Block> craftIsle$getHardenedBlocks() {
+        Set<Block> set = craftIsle$hardenedBlocks;
+        if (set == null) {
+            craftIsle$hardenedBlocks = set = Set.of(Blocks.OAK_LOG, /* ... */ );
+        }
+        return set;
+    }
+
+    @Inject(method = "getDestroyProgress", at = @At("HEAD"), cancellable = true)
+    private void overrideDestroyProgress(
+        BlockState state, Player player, BlockGetter level, BlockPos pos,
+        CallbackInfoReturnable<Float> cir
+    ) {
+        if (craftIsle$getHardenedBlocks().contains(state.getBlock())) {
+            cir.setReturnValue(player.getDestroySpeed(state) / CRAFT_ISLE_HARDNESS_FACTOR);
+        }
+    }
+}
+```
+
+`player.getDestroySpeed(state)` はツール効率ボーナスを含む速度倍率。素手なら `1.0f`。
+
+### break time の計算式
+
+```
+break time (ticks) = hardness × divisor / playerSpeed
+```
+
+| 状況 | hardness | divisor | playerSpeed | 秒数 |
+|------|----------|---------|-------------|------|
+| 石・素手 | 1.5 | 100 | 1.0 | 7.5s |
+| 木材・素手（バニラ） | 2.0 | 30 | 1.0 | 3.0s |
+| `CRAFT_ISLE_HARDNESS_FACTOR = 150` で素手 | — | — | 1.0 | 7.5s |
+
+---
+
+## Mixin の `@Unique` 静的フィールドと循環初期化
+
+### 問題
+
+`BlockBehaviour` をターゲットにした Mixin で `static final Set<Block> = Set.of(Blocks.OAK_LOG, ...)` を宣言すると**クラッシュ**する。
+
+```
+ExceptionInInitializerError
+  at BlockBehaviour.<clinit>
+Caused by: NullPointerException (FireBlock.createBlockStateDefinition)
+```
+
+原因：`@Unique` 静的フィールドは Mixin によって**ターゲットクラスの `<clinit>`** に埋め込まれる。`BlockBehaviour.<clinit>` が走るときに `Blocks` への参照を評価しようとするが、`Blocks` 自体が `BlockBehaviour` を継承するブロックを登録中なので循環初期化になる。
+
+### 解決策：遅延初期化
+
+`Set<Block>` を `null` で宣言し、最初に呼ばれたときだけ初期化する。この時点では `Blocks` は完全に初期化済みなので安全。
+
+```java
+@Unique private static volatile Set<Block> craftIsle$mySet = null;
+
+@Unique
+private static Set<Block> craftIsle$getMySet() {
+    Set<Block> set = craftIsle$mySet;
+    if (set == null) {
+        craftIsle$mySet = set = Set.of(Blocks.OAK_LOG, /* ... */);
+    }
+    return set;
+}
+```
+
+**`float` や `int` などプリミティブ定数は安全**（`Blocks` に依存しないため）：
+
+```java
+@Unique private static final float CRAFT_ISLE_FACTOR = 150.0f; // これは OK
+```
+
+---
+
 ## サイド分離
 
 `src/main/java/` に置いたコードはサーバーでも読み込まれる。クライアント専用クラス（`MinecraftClient`、描画系）を `src/main/` に置くと専用サーバーで `ClassNotFoundException` が発生する。
