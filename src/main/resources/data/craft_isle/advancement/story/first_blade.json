@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "id": "craft_isle:stone_knife"
+    },
+    "title": {
+      "translate": "advancements.craft_isle.story.first_blade.title"
+    },
+    "description": {
+      "translate": "advancements.craft_isle.story.first_blade.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "craft_isle:story/first_steps",
+  "criteria": {
+    "craft_stone_knife": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "craft_isle:stone_knife"
+      }
+    }
+  }
+}

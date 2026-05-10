@@ -1,0 +1,28 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:oak_log"
+    },
+    "title": {
+      "translate": "advancements.craft_isle.story.bare_hands.title"
+    },
+    "description": {
+      "translate": "advancements.craft_isle.story.bare_hands.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "craft_isle:story/wake_up",
+  "criteria": {
+    "hit_log": {
+      "trigger": "craft_isle:attack_block",
+      "conditions": {
+        "block": {
+          "blocks": "#minecraft:logs"
+        }
+      }
+    }
+  }
+}

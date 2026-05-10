@@ -1,0 +1,26 @@
+{
+  "display": {
+    "icon": {
+      "id": "craft_isle:pebble"
+    },
+    "title": {
+      "translate": "advancements.craft_isle.story.first_steps.title"
+    },
+    "description": {
+      "translate": "advancements.craft_isle.story.first_steps.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "craft_isle:story/wake_up",
+  "criteria": {
+    "pick_up_pebble": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{"items": ["craft_isle:pebble"]}]
+      }
+    }
+  }
+}
