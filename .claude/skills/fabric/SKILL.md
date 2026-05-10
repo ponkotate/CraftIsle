@@ -1,6 +1,6 @@
 ---
 name: fabric
-description: Fabric mod 開発の問題を診断・修正するスキル。アイテムやブロックのテクスチャが Missing Texture になる、Mixin が効かない、クライアントコードがサーバーでクラッシュする、レシピ・ルートテーブルが機能しない、ビルドエラーが発生する、カスタム進捗トリガーが動かないといった問題に遭遇したときに使用する。新バージョン（1.21.4・MC 26.1以降）での仕様変更に起因するバグに特に有効。
+description: Fabric mod 開発の問題を診断・修正するスキル。アイテムやブロックのテクスチャが Missing Texture になる、Mixin が効かない、クライアントコードがサーバーでクラッシュする、レシピ・ルートテーブルが機能しない、ビルドエラーが発生する、カスタム進捗トリガーが動かない、カスタム燃料アイテムが炉で使えないといった問題に遭遇したときに使用する。新バージョン（1.21.4・MC 26.1以降）での仕様変更に起因するバグに特に有効。
 ---
 
 # Fabric Mod 開発 診断スキル
@@ -20,6 +20,7 @@ description: Fabric mod 開発の問題を診断・修正するスキル。ア�
 | レシピが機能しない / ルートテーブルが空 | [Identifier と名前空間] / minecraft スキル |
 | `./gradlew build` がコンパイルエラー | [ビルドエラー] |
 | カスタム進捗トリガーがビルド or 動作しない | [カスタム進捗トリガー] |
+| カスタムアイテムを炉の燃料にしたい / `FuelRegistryEvents` が見つからない | [カスタム燃料の登録] |
 
 ---
 
@@ -378,6 +379,54 @@ javap -classpath "$JAR" -p net.minecraft.advancements.criterion.ItemPredicate
 
 ---
 
+## カスタム燃料の登録（MC 26.1 / Fabric API 0.145.1+26.1）
+
+### クラス名の変更
+
+旧バージョンの Fabric API では `FuelRegistry` や `FuelRegistryEvents` が使われていたが、MC 26.1 対応の Fabric API では**`FuelValueEvents`** に変わっている。`FuelRegistryEvents` をそのまま使うと `cannot find symbol` コンパイルエラーになる。
+
+```java
+// NG（旧名 — MC 26.1 の Fabric API には存在しない）
+import net.fabricmc.fabric.api.registry.FuelRegistryEvents;
+
+// OK（MC 26.1 / Fabric API 0.145.1+26.1）
+import net.fabricmc.fabric.api.registry.FuelValueEvents;
+```
+
+### 登録パターン
+
+`ModItems.initialize()` 内で `FuelValueEvents.BUILD` に登録する。Stick の burn time は 100 tick（5秒）。
+
+```java
+FuelValueEvents.BUILD.register((builder, context) -> {
+    builder.add(ModItems.OAK_BARK, 100);   // Stick 相当（100 tick = 5秒）
+    builder.add(ModItems.BIRCH_BARK, 100);
+});
+```
+
+`builder.add()` は `ItemLike` と `int`（tick 数）を受け取る。タグ（`TagKey<Item>`）を渡すオーバーロードもある。
+
+### バニラ burn time の参考値
+
+| アイテム | tick | 秒 |
+|----------|------|-----|
+| 木材ブロック | 300 | 15s |
+| 木製ツール/剣 | 200 | 10s |
+| 棒（Stick） | 100 | 5s |
+| 竹 | 50 | 2.5s |
+
+### 正しい API の調べ方
+
+Fabric API の jar を直接確認する：
+
+```bash
+JAR="$HOME/.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-content-registries-v0/<version>/*/fabric-content-registries-v0-<version>-sources.jar"
+jar tf "$JAR" | grep -i fuel
+# → net/fabricmc/fabric/api/registry/FuelValueEvents.java
+```
+
+---
+
 ## 新機能追加時のチェックリスト
 
 ブロック・アイテムを新規追加するたびに確認する：
@@ -389,3 +438,4 @@ javap -classpath "$JAR" -p net.minecraft.advancements.criterion.ItemPredicate
 - [ ] `assets/craft_isle/textures/item/<id>.png`（テクスチャ）を配置
 - [ ] ブロックの場合は `blockstates/<id>.json` と `models/block/<id>.json` も作成
 - [ ] 言語ファイル（`en_us.json` / `ja_jp.json`）にエントリ追加
+- [ ] `./gradlew build` を実行してビルドが成功することを確認する（コンパイルエラーがないか）
