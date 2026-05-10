@@ -40,7 +40,8 @@ public class ModItems {
         ))
     );
     public static final Item PLASTIC_ROPE = registerBlockItem("plastic_rope", ModBlocks.PLASTIC_ROPE);
-    public static final Item OAK_BARK     = register("oak_bark", key -> new Item(new Item.Properties().setId(key)));
+    public static final Item OAK_BARK     = register("oak_bark",   key -> new Item(new Item.Properties().setId(key)));
+    public static final Item BIRCH_BARK   = register("birch_bark", key -> new Item(new Item.Properties().setId(key)));
 
     private static Item register(String name, Function<ResourceKey<Item>, Item> factory) {
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(CraftIsle.MOD_ID, name));
@@ -60,6 +61,7 @@ public class ModItems {
         CreativeModeTabEvents.modifyOutputEvent(tabKey("ingredients")).register(output -> {
             output.accept(PEBBLE);
             output.accept(OAK_BARK);
+            output.accept(BIRCH_BARK);
             output.accept(PLASTIC_ROPE);
         });
         CreativeModeTabEvents.modifyOutputEvent(tabKey("tools_and_utilities")).register(output -> {
