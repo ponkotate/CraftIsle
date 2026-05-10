@@ -263,7 +263,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
                     // ~5% chance to scatter pebbles on inland grass
                     if (hash2D(pebbleSeed, wx, wz) < 0.05) {
                         mutablePos.set(wx, topSolid + 1, wz);
-                        int count = (int)(hash2D(~pebbleSeed, wx, wz) * 4) + 1;
+                        int count = Math.min(4, (int)(hash2D(~pebbleSeed, wx, wz) * 4) + 1);
                         chunk.setBlockState(mutablePos, ModBlocks.PEBBLE.defaultBlockState().setValue(PebbleBlock.COUNT, count));
                     }
                 }
