@@ -109,9 +109,13 @@ Identifier の名前空間が間違うと、レシピ・ルートテーブル・
 
 ### レシピが機能しない場合の確認
 
-1. `data/craft_isle/recipes/<name>.json` が存在するか
-2. レシピ内の `ingredient` や `result` の `id` が `"craft_isle:<name>"` になっているか
-3. タグ参照 (`#minecraft:...`) のパスが正しいか
+1. `data/craft_isle/recipe/<name>.json` が存在するか（MC 1.21.4+ は **`recipe/`** 単数形）
+2. `key` の値がベア文字列になっているか（`"S": "craft_isle:pebble"` — `{"item": "..."}` オブジェクト形式は不要）
+3. `pattern` 文字列の空白が **ASCII スペース（U+0020）** であるか（全角スペース U+3000 は無効）
+4. `result` の `id` が `"craft_isle:<name>"` になっているか
+5. タグ参照 (`#minecraft:...`) のパスが正しいか
+
+レシピ JSON の完全なフォーマット仕様は [recipe-format.md](recipe-format.md) を参照。
 
 ---
 
