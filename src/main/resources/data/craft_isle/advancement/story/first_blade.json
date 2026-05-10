@@ -14,7 +14,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "craft_isle:story/first_steps",
+  "parent": "craft_isle:story/get_stick",
   "criteria": {
     "craft_stone_knife": {
       "trigger": "minecraft:recipe_crafted",

@@ -6,6 +6,8 @@
   "advancements.craft_isle.story.first_steps.description": "道具作りに使える小石を集める",
   "advancements.craft_isle.story.bare_hands.title": "手では無理だ",
   "advancements.craft_isle.story.bare_hands.description": "この世界では、素手で木を倒すことはできない",
+  "advancements.craft_isle.story.get_stick.title": "棒を集める",
+  "advancements.craft_isle.story.get_stick.description": "葉を壊して棒を手に入れる",
   "advancements.craft_isle.story.first_blade.title": "最初の刃",
   "advancements.craft_isle.story.first_blade.description": "生存の第一歩となる簡易ナイフを作る",
   "block.craft_isle.pebble": "小石",
