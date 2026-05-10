@@ -4,10 +4,10 @@
       "id": "minecraft:sand"
     },
     "title": {
-      "translate": "advancements.craft_isle.story.wake_up.title"
+      "translate": "advancements.craft_isle.story.root.title"
     },
     "description": {
-      "translate": "advancements.craft_isle.story.wake_up.description"
+      "translate": "advancements.craft_isle.story.root.description"
     },
     "background": "minecraft:block/blue_concrete_powder",
     "frame": "task",
@@ -16,7 +16,7 @@
     "hidden": false
   },
   "criteria": {
-    "wake_up": {
+    "tick": {
       "trigger": "minecraft:tick"
     }
   }

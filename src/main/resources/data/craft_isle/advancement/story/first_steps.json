@@ -14,7 +14,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "craft_isle:story/wake_up",
+  "parent": "craft_isle:story/root",
   "criteria": {
     "pick_up_pebble": {
       "trigger": "minecraft:inventory_changed",

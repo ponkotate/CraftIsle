@@ -1,7 +1,7 @@
 {
   "generator.craft_isle.craft_isle": "Craft Isle",
-  "advancements.craft_isle.story.wake_up.title": "Wake Up",
-  "advancements.craft_isle.story.wake_up.description": "Start surviving on an island surrounded by the sea",
+  "advancements.craft_isle.story.root.title": "Craft Isle",
+  "advancements.craft_isle.story.root.description": "Start surviving on an island surrounded by the sea",
   "advancements.craft_isle.story.first_steps.title": "First Things First",
   "advancements.craft_isle.story.first_steps.description": "Collect pebbles that can be used for tool making",
   "advancements.craft_isle.story.bare_hands.title": "Not With Bare Hands",

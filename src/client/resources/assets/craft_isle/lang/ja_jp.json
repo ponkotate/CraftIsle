@@ -1,7 +1,7 @@
 {
   "generator.craft_isle.craft_isle": "クラフトアイル",
-  "advancements.craft_isle.story.wake_up.title": "目を覚ませ",
-  "advancements.craft_isle.story.wake_up.description": "海に囲まれた孤島でサバイバルを始める",
+  "advancements.craft_isle.story.root.title": "Craft Isle",
+  "advancements.craft_isle.story.root.description": "海に囲まれた孤島でサバイバルを始める",
   "advancements.craft_isle.story.first_steps.title": "まずは足元から",
   "advancements.craft_isle.story.first_steps.description": "道具作りに使える小石を集める",
   "advancements.craft_isle.story.bare_hands.title": "手では無理だ",
