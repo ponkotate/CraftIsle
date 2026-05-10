@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "craft_isle_test",
+  "version": "1.0.0",
+  "entrypoints": {
+    "fabric-gametest": [
+      "org.ponkotate.craftisle.gametest.CraftIsleGameTest",
+      "org.ponkotate.craftisle.gametest.PebbleBlockGameTest",
+      "org.ponkotate.craftisle.gametest.StoneKnifeItemGameTest"
+    ]
+  }
+}

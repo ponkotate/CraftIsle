@@ -96,7 +96,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
     // Value noise — bilinear interpolation with smoothstep
     // ─────────────────────────────────────────────────────────────
 
-    private static double hash2D(long seed, int x, int z) {
+    static double hash2D(long seed, int x, int z) {
         long h = seed;
         h ^= (long) x * 0x9e3779b97f4a7c15L;
         h ^= (long) z * 0x6c62272e07bb0142L;
@@ -108,7 +108,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
         return (double) (h & 0xFFFFFFFFL) / (double) 0xFFFFFFFFL; // [0, 1]
     }
 
-    private static double valueNoise(long seed, double x, double z, int scale) {
+    static double valueNoise(long seed, double x, double z, int scale) {
         double sx = x / scale;
         double sz = z / scale;
         int xi = (int) Math.floor(sx);
