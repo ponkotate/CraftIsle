@@ -1,6 +1,7 @@
 package org.ponkotate.craftisle.registry;
 
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.registry.FuelValueEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -58,6 +59,11 @@ public class ModItems {
     }
 
     public static void initialize() {
+        FuelValueEvents.BUILD.register((builder, context) -> {
+            builder.add(OAK_BARK, 100);
+            builder.add(BIRCH_BARK, 100);
+        });
+
         CreativeModeTabEvents.modifyOutputEvent(tabKey("ingredients")).register(output -> {
             output.accept(PEBBLE);
             output.accept(OAK_BARK);
