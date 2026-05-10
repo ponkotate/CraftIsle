@@ -17,6 +17,7 @@ public class ModItems {
 
     public static final Item PEBBLE      = registerBlockItem("pebble", ModBlocks.PEBBLE);
     public static final Item STONE_KNIFE = register("stone_knife", key -> new Item(new Item.Properties().setId(key)));
+    public static final Item PLASTIC_ROPE = registerBlockItem("plastic_rope", ModBlocks.PLASTIC_ROPE);
 
     private static Item register(String name, Function<ResourceKey<Item>, Item> factory) {
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(CraftIsle.MOD_ID, name));

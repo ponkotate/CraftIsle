@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import org.ponkotate.craftisle.CraftIsle;
 import org.ponkotate.craftisle.block.PebbleBlock;
+import org.ponkotate.craftisle.block.PlasticRopeBlock;
 
 import java.util.function.Function;
 
@@ -21,6 +22,14 @@ public class ModBlocks {
             .setId(key)
             .instabreak()
             .sound(SoundType.STONE)
+            .noOcclusion()
+    ));
+
+    public static final Block PLASTIC_ROPE = register("plastic_rope", key -> new PlasticRopeBlock(
+        BlockBehaviour.Properties.of()
+            .setId(key)
+            .instabreak()
+            .sound(SoundType.WOOL)
             .noOcclusion()
     ));
 

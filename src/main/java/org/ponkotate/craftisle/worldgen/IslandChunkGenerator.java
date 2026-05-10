@@ -55,6 +55,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
     private volatile long noiseSeed2;
     private volatile long noiseSeed3;
     private volatile long pebbleSeed;
+    private volatile long plasticRopeSeed;
 
     public IslandChunkGenerator(BiomeSource biomeSource) {
         super(biomeSource);
@@ -81,6 +82,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
                     noiseSeed2     = factory.fromHashOf("noise2").nextLong();
                     noiseSeed3     = factory.fromHashOf("noise3").nextLong();
                     pebbleSeed     = factory.fromHashOf("pebble").nextLong();
+                    plasticRopeSeed = factory.fromHashOf("plastic_rope").nextLong();
                     if (getBiomeSource() instanceof IslandBiomeSource islandBiomeSource) {
                         islandBiomeSource.setGridSeed(islandGridSeed);
                     }
@@ -242,6 +244,11 @@ public class IslandChunkGenerator extends ChunkGenerator {
                             mutablePos.set(wx, sy, wz);
                             chunk.setBlockState(mutablePos, sand);
                         }
+                    }
+                    // ~3% chance to scatter washed-up rope on above-water beach sand
+                    if (topSolid >= SEA_LEVEL && hash2D(plasticRopeSeed, wx, wz) < 0.03) {
+                        mutablePos.set(wx, topSolid + 1, wz);
+                        chunk.setBlockState(mutablePos, ModBlocks.PLASTIC_ROPE.defaultBlockState());
                     }
                 } else {
                     // Inland → grass cap + SOIL_DEPTH dirt layers
