@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_pebble": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{"items": ["craft_isle:pebble"]}]
+      }
+    },
+    "has_plastic_rope": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{"items": ["craft_isle:plastic_rope"]}]
+      }
+    }
+  },
+  "requirements": [["has_pebble", "has_plastic_rope"]],
+  "rewards": {
+    "recipes": ["craft_isle:stone_knife"]
+  }
+}
