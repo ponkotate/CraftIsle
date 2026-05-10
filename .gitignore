@@ -33,3 +33,6 @@ crash-reports/
 # Mod outputs (keep the source, not the build artifacts)
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
+
+# Local assets
+assets/
