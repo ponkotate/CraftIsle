@@ -1,6 +1,6 @@
 ---
 name: fabric
-description: Fabric mod 開発の問題を診断・修正するスキル。アイテムやブロックのテクスチャが Missing Texture になる、Mixin が効かない、クライアントコードがサーバーでクラッシュする、レシピ・ルートテーブルが機能しない、ビルドエラーが発生する、カスタム進捗トリガーが動かない、カスタム燃料アイテムが炉で使えないといった問題に遭遇したときに使用する。新バージョン（1.21.4・MC 26.1以降）での仕様変更に起因するバグに特に有効。
+description: Fabric mod 開発の問題を診断・修正するスキル。アイテムやブロックのテクスチャが Missing Texture になる、Mixin が効かない、クライアントコードがサーバーでクラッシュする、レシピ・ルートテーブルが機能しない、ビルドエラーが発生する、カスタム進捗トリガーが動かない、カスタム燃料アイテムが炉で使えない、カスタムブロックで `updateShape` のコンパイルエラーが出るといった問題に遭遇したときに使用する。新バージョン（1.21.4・MC 26.1以降）での仕様変更に起因するバグに特に有効。
 ---
 
 # Fabric Mod 開発 診断スキル
@@ -21,6 +21,7 @@ description: Fabric mod 開発の問題を診断・修正するスキル。ア�
 | `./gradlew build` がコンパイルエラー | [ビルドエラー] |
 | カスタム進捗トリガーがビルド or 動作しない | [カスタム進捗トリガー] |
 | カスタムアイテムを炉の燃料にしたい / `FuelRegistryEvents` が見つからない | [カスタム燃料の登録] |
+| `updateShape` で `method does not override supertype method` | [ブロック API（MC 26.1 変更点）] |
 
 ---
 
@@ -226,11 +227,12 @@ Identifier の名前空間が間違うと、レシピ・ルートテーブル・
 
 ### Mojang マッピングでよく間違えるクラス名
 
-| Yarn 名 | Mojang 名 |
-|---------|-----------|
+| Yarn 名 / 誤ったパッケージ | Mojang 名 / 正しいパッケージ |
+|----------------------------|------------------------------|
 | `net.minecraft.util.Identifier` | `net.minecraft.resources.Identifier` |
 | `net.minecraft.util.registry.Registry` | `net.minecraft.core.Registry` |
 | `net.minecraft.block.Block` | `net.minecraft.world.level.block.Block` |
+| `net.minecraft.world.ticks.ScheduledTickAccess`（存在しない） | `net.minecraft.world.level.ScheduledTickAccess` |
 
 ---
 
@@ -423,6 +425,54 @@ Fabric API の jar を直接確認する：
 JAR="$HOME/.gradle/caches/modules-2/files-2.1/net.fabricmc.fabric-api/fabric-content-registries-v0/<version>/*/fabric-content-registries-v0-<version>-sources.jar"
 jar tf "$JAR" | grep -i fuel
 # → net/fabricmc/fabric/api/registry/FuelValueEvents.java
+```
+
+---
+
+## ブロック API（MC 26.1 変更点）
+
+### `updateShape` のシグネチャ変更
+
+MC 26.1 で `BlockBehaviour.updateShape` のパラメータの数・順序が大きく変わった。1.21.x のコード例をそのままコピーすると `method does not override supertype method` コンパイルエラーになる。
+
+| バージョン | シグネチャ |
+|-----------|-----------|
+| 1.21.x | `(BlockState, Direction, BlockState, LevelAccessor, BlockPos, BlockPos)` |
+| MC 26.1 | `(BlockState, LevelReader, ScheduledTickAccess, BlockPos, Direction, BlockPos, BlockState, RandomSource)` |
+
+### `ScheduledTickAccess` のパッケージ
+
+正しいパッケージは `net.minecraft.world.level.ScheduledTickAccess`。`net.minecraft.world.ticks.ScheduledTickAccess` というパッケージは存在しない。
+
+確認コマンド：
+
+```bash
+jar tf ~/.gradle/caches/fabric-loom/26.1/minecraft-merged.jar | grep ScheduledTickAccess
+```
+
+### 正しい実装例（地面に置くブロック）
+
+```java
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess; // 正しいパッケージ
+
+@Override
+protected BlockState updateShape(
+    BlockState state,
+    LevelReader level,
+    ScheduledTickAccess scheduledTickAccess,
+    BlockPos pos,
+    Direction direction,
+    BlockPos neighborPos,
+    BlockState neighborState,
+    RandomSource random
+) {
+    if (direction == Direction.DOWN && !state.canSurvive(level, pos)) {
+        return Blocks.AIR.defaultBlockState();
+    }
+    return super.updateShape(state, level, scheduledTickAccess, pos, direction, neighborPos, neighborState, random);
+}
 ```
 
 ---
