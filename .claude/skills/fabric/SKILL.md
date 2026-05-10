@@ -1,6 +1,6 @@
 ---
 name: fabric
-description: Fabric mod 開発の問題を診断・修正するスキル。アイテムやブロックのテクスチャが Missing Texture になる、Mixin が効かない、クライアントコードがサーバーでクラッシュする、レシピ・ルートテーブルが機能しない、ビルドエラーが発生するといった問題に遭遇したときに使用する。新バージョン（1.21.4以降）での仕様変更に起因するバグに特に有効。
+description: Fabric mod 開発の問題を診断・修正するスキル。アイテムやブロックのテクスチャが Missing Texture になる、Mixin が効かない、クライアントコードがサーバーでクラッシュする、レシピ・ルートテーブルが機能しない、ビルドエラーが発生する、カスタム進捗トリガーが動かないといった問題に遭遇したときに使用する。新バージョン（1.21.4・MC 26.1以降）での仕様変更に起因するバグに特に有効。
 ---
 
 # Fabric Mod 開発 診断スキル
@@ -17,8 +17,9 @@ description: Fabric mod 開発の問題を診断・修正するスキル。ア�
 | アイテム・ブロックの Missing Texture / 紫黒チェック | [アイテムモデル定義] |
 | Mixin の @Inject が発火しない | [Mixin 登録] |
 | 専用サーバーで `ClassNotFoundException` / クラッシュ | [サイド分離] |
-| レシピが機能しない / ルートテーブルが空 | [Identifier と名前空間] |
+| レシピが機能しない / ルートテーブルが空 | [Identifier と名前空間] / minecraft スキル |
 | `./gradlew build` がコンパイルエラー | [ビルドエラー] |
+| カスタム進捗トリガーがビルド or 動作しない | [カスタム進捗トリガー] |
 
 ---
 
@@ -109,13 +110,10 @@ Identifier の名前空間が間違うと、レシピ・ルートテーブル・
 
 ### レシピが機能しない場合の確認
 
-1. `data/craft_isle/recipe/<name>.json` が存在するか（MC 1.21.4+ は **`recipe/`** 単数形）
-2. `key` の値がベア文字列になっているか（`"S": "craft_isle:pebble"` — `{"item": "..."}` オブジェクト形式は不要）
-3. `pattern` 文字列の空白が **ASCII スペース（U+0020）** であるか（全角スペース U+3000 は無効）
-4. `result` の `id` が `"craft_isle:<name>"` になっているか
-5. タグ参照 (`#minecraft:...`) のパスが正しいか
+データファイルのパス・JSON フォーマットの詳細は **minecraft スキル** を参照。Fabric 側での確認事項：
 
-レシピ JSON の完全なフォーマット仕様は [recipe-format.md](recipe-format.md) を参照。
+1. `Identifier.fromNamespaceAndPath` の名前空間が `"craft_isle"` になっているか
+2. レジストリ登録時の名前と JSON ファイル名が一致しているか
 
 ---
 
@@ -136,6 +134,151 @@ Identifier の名前空間が間違うと、レシピ・ルートテーブル・
 | `net.minecraft.util.Identifier` | `net.minecraft.resources.Identifier` |
 | `net.minecraft.util.registry.Registry` | `net.minecraft.core.Registry` |
 | `net.minecraft.block.Block` | `net.minecraft.world.level.block.Block` |
+
+---
+
+## カスタム進捗トリガー（MC 26.1 API 変更）
+
+MC 26.1（Fabric API 0.145.1+26.1）では、進捗トリガー周辺のAPIが大幅に変わった。以下の変更点を見落とすと17件以上のコンパイルエラーが発生する。
+
+### パッケージ名変更
+
+`critereon` → `criterion`（`e` が消えた）。
+
+```java
+// NG（旧名）
+import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
+// OK（MC 26.1）
+import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
+```
+
+影響するクラス: `SimpleCriterionTrigger`、`BlockPredicate`、`ItemPredicate`、`ContextAwarePredicate`、`EntityPredicate` など `advancements.criterion.*` 配下のすべて。
+
+### トリガー登録方法の変更
+
+`CriteriaTriggers.register()` が**削除された**。`BuiltInRegistries.TRIGGER_TYPES` に直接登録する。
+
+```java
+// NG（旧来の方法 — MC 26.1 では存在しない）
+CriteriaTriggers.register(Identifier.fromNamespaceAndPath(MOD_ID, "my_trigger"), new MyTrigger());
+
+// OK（MC 26.1）
+Registry.register(
+    BuiltInRegistries.TRIGGER_TYPES,
+    Identifier.fromNamespaceAndPath(CraftIsle.MOD_ID, "my_trigger"),
+    new MyTrigger()
+);
+```
+
+### メソッド名衝突の落とし穴
+
+`SimpleCriterionTrigger` には protected メソッド `trigger(ServerPlayer, Predicate<T>)` がある。サブクラスで `trigger(ServerPlayer, ...)` という名前のpublicメソッドを追加するとオーバーロード解決が壊れ、コンパイルエラーになる。**publicメソッド名は `fire()` など別名にする。**
+
+```java
+// NG — 親の trigger() と衝突する
+public void trigger(ServerPlayer player, ServerLevel level, BlockPos pos) { ... }
+
+// OK — 別名を使う
+public void fire(ServerPlayer player, ServerLevel level, BlockPos pos) {
+    ItemStack heldItem = player.getMainHandItem();
+    this.trigger(player, instance -> instance.matches(level, pos, heldItem)); // 親のtrigger()を呼ぶ
+}
+```
+
+### ItemPredicate のメソッド名変更
+
+`ItemPredicate.matches()` → `ItemPredicate.test()`（`Predicate<ItemInstance>` を実装するようになった。`ItemStack` は `ItemInstance` を実装している）。
+
+```java
+// NG
+if (item.isPresent() && !item.get().matches(heldItem)) return false;
+// OK
+if (item.isPresent() && !item.get().test(heldItem)) return false;
+```
+
+### BlockPredicate の JSON フォーマット変更
+
+MC 26.1 で `"tag"` フィールドが削除され `"blocks"`（HolderSet）に統合された。詳細は **minecraft スキル** を参照。
+
+```json
+// OK（MC 26.1）
+{ "block": { "blocks": "#minecraft:logs" } }
+```
+
+### 完全実装パターン
+
+```java
+// AttackBlockTrigger.java
+public class AttackBlockTrigger extends SimpleCriterionTrigger<AttackBlockTrigger.TriggerInstance> {
+
+    @Override
+    public Codec<TriggerInstance> codec() {
+        return TriggerInstance.CODEC;
+    }
+
+    public void fire(ServerPlayer player, ServerLevel level, BlockPos pos) {
+        ItemStack heldItem = player.getMainHandItem();
+        this.trigger(player, instance -> instance.matches(level, pos, heldItem));
+    }
+
+    public record TriggerInstance(
+        Optional<ContextAwarePredicate> player,
+        Optional<BlockPredicate> block,
+        Optional<ItemPredicate> item
+    ) implements SimpleInstance {
+
+        public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(inst ->
+            inst.group(
+                EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
+                BlockPredicate.CODEC.optionalFieldOf("block").forGetter(TriggerInstance::block),
+                ItemPredicate.CODEC.optionalFieldOf("item").forGetter(TriggerInstance::item)
+            ).apply(inst, TriggerInstance::new)
+        );
+
+        public boolean matches(ServerLevel level, BlockPos pos, ItemStack heldItem) {
+            if (block.isPresent() && !block.get().matches(level, pos)) return false;
+            if (item.isPresent() && !item.get().test(heldItem)) return false;
+            return true;
+        }
+    }
+}
+```
+
+```java
+// ModTriggers.java
+public class ModTriggers {
+    public static final AttackBlockTrigger ATTACK_BLOCK = Registry.register(
+        BuiltInRegistries.TRIGGER_TYPES,
+        Identifier.fromNamespaceAndPath(CraftIsle.MOD_ID, "attack_block"),
+        new AttackBlockTrigger()
+    );
+    public static void initialize() {}
+}
+```
+
+```java
+// CraftIsle.java（onInitialize 内）
+ModTriggers.initialize();
+AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+    if (!world.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+        ModTriggers.ATTACK_BLOCK.fire(serverPlayer, (ServerLevel) world, pos);
+    }
+    return InteractionResult.PASS;
+});
+```
+
+### APIを実際に確認する方法
+
+コンパイルエラーが解決できないときは `javap` でデコンパイルされた jar を直接調べる。
+
+```bash
+# MC jar のパス（バージョンに合わせて変更）
+JAR="$HOME/.gradle/caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged-deobf/26.1/minecraft-merged-deobf-26.1.jar"
+
+# クラスのメソッドシグネチャを確認
+javap -classpath "$JAR" -p net.minecraft.advancements.criterion.SimpleCriterionTrigger
+javap -classpath "$JAR" -p net.minecraft.advancements.criterion.ItemPredicate
+```
 
 ---
 
