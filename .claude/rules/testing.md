@@ -15,6 +15,8 @@
 
 JaCoCo でカバレッジを計測する。`./gradlew check` 実行時に 80% を下回るとビルドが失敗する。
 
+**注意**: `canSurvive`・`useOn` など Level に依存するブロック/アイテムメソッドはゲームテストでのみ実行可能であり、JaCoCo のカバレッジには計上されない。ユニットテストだけではカバレッジが 80% に届かない可能性があるため、ユニットテストとゲームテストを組み合わせて設計すること。
+
 ## Gradle 設定
 
 `build.gradle` に以下を追加する。
@@ -125,6 +127,37 @@ class MyBlockTest {
 }
 ```
 
+### MC 26.1 固有の制約
+
+#### ブロック構築時の ID 必須
+MC 26.1 では `BlockBehaviour.Properties` に `.setId(ResourceKey<Block>)` が必須。指定しないと `effectiveDrops()` 等で `NullPointerException` が発生する。ユニットテストでブロックを直接インスタンス化する場合は必ず指定する。
+
+```java
+ResourceKey<Block> key = ResourceKey.create(
+    Registries.BLOCK,
+    Identifier.fromNamespaceAndPath("test", "my_block")
+);
+MyBlock block = new MyBlock(BlockBehaviour.Properties.of().setId(key));
+```
+
+#### `ItemStack` のコンポーネントバインディング制限
+`Bootstrap.bootStrap()` のみではアイテムコンポーネントのバインディングが行われないため、`new ItemStack(someItem)` は `NullPointerException: Components not bound yet` で失敗する。ユニットテストでは `ItemStack.EMPTY` を使用するか、アイテムインスタンスを必要としないアプローチを取る。
+
+#### `ItemPredicate` の直接構築
+`ItemPredicate.CODEC.parse(JsonOps.INSTANCE, ...)` はアイテムレジストリへの `RegistryOps` アクセスが必要なため、ユニットテスト環境では失敗する。レコードコンストラクタで直接生成する。
+
+```java
+// NG: JsonOps.INSTANCE では registry アクセスできない
+// ItemPredicate.CODEC.parse(JsonOps.INSTANCE, json)
+
+// OK: レコードコンストラクタで直接生成
+ItemPredicate predicate = new ItemPredicate(
+    Optional.empty(),
+    MinMaxBounds.Ints.exactly(1),
+    DataComponentMatchers.ANY
+);
+```
+
 ### テスト対象の選定
 以下はユニットテストでカバーする。
 
@@ -138,8 +171,49 @@ class MyBlockTest {
 - `src/gametest/java/org/ponkotate/craftisle/gametest/` 配下に配置する
 - クラス名はテスト対象機能名 + `GameTest`（例: `StoneKnifeProgressionGameTest`）
 
+### アノテーション（Fabric API 4.0.x / MC 26.1）
+
+Fabric API 4.0.x では `FabricGameTest` インターフェースと `@net.minecraft.gametest.framework.GameTest` アノテーションが廃止された。代わりに Fabric 独自のアノテーションを使用する。
+
+```java
+import net.fabricmc.fabric.api.gametest.v1.GameTest;
+
+public class MyFeatureGameTest {
+
+    // 空の構造（デフォルト）— 属性不要
+    @GameTest
+    public void myTest(GameTestHelper helper) { ... }
+
+    // カスタム構造を使う場合
+    @GameTest(structure = "craft_isle:my_structure")
+    public void myStructureTest(GameTestHelper helper) { ... }
+}
+```
+
+デフォルト構造は `"fabric-gametest-api-v1:empty"`（5×5×5 の空間）。`@GameTest` に属性を指定しなければ自動で使用される。
+
+### `GameTestHelper` のメソッドシグネチャ（MC 26.1）
+
+エラーメッセージは `String` / `Supplier<String>` ではなく `Function<T, Component>` を渡す。
+
+```java
+import net.minecraft.network.chat.Component;
+
+// assertBlock: Function<Block, Component>
+helper.assertBlock(pos, b -> b == Blocks.STONE,
+    b -> Component.literal("expected stone"));
+
+// assertBlockState: Function<BlockState, Component>
+helper.assertBlockState(pos, s -> s.getValue(MyBlock.COUNT) == 3,
+    s -> Component.literal("count should be 3"));
+
+// isAir: Block.isAir() は廃止、BlockState.isAir() を使う
+helper.assertBlockState(pos, s -> s.isAir(),
+    s -> Component.literal("block should be air"));
+```
+
 ### エントリポイント登録
-`src/gametest/resources/fabric.mod.json` を作成する。
+`src/gametest/resources/fabric.mod.json` を作成する。ゲームテストクラスは直接列挙できる。
 
 ```json
 {
@@ -147,7 +221,10 @@ class MyBlockTest {
   "id": "craft_isle_test",
   "version": "1.0.0",
   "entrypoints": {
-    "fabric-gametest": ["org.ponkotate.craftisle.gametest.CraftIsleGameTest"]
+    "fabric-gametest": [
+      "org.ponkotate.craftisle.gametest.MyFeatureGameTest",
+      "org.ponkotate.craftisle.gametest.AnotherFeatureGameTest"
+    ]
   }
 }
 ```
