@@ -274,9 +274,12 @@ helper.assertBlockState(pos, s -> s.isAir(),
 
 ## カバレッジ除外対象
 
-以下はカバレッジ計測の対象外とする。
+以下はカバレッジ計測の対象外とする。`jacocoTestReport` と `jacocoTestCoverageVerification` の両タスクに同じ除外リストを適用すること（片方だけ適用しても検証タスクが失敗する）。
 
 | 除外対象 | 理由 |
 |----------|------|
 | `mixin/**` | Mixin はバイトコード注入で動作するため JaCoCo で正確に計測できない |
 | `client/**` | クライアント専用コードはサーバーサイドのテスト環境では実行不可 |
+| `block/**` | Level 依存メソッド（`canSurvive`, `neighborChanged` 等）はユニットテスト不可。GameTest でカバー |
+| `item/**` | Level 依存メソッド（`useOn` 等）はユニットテスト不可。GameTest でカバー |
+| `worldgen/**` | フル MC サーバーコンテキストが必要。GameTest でカバー |

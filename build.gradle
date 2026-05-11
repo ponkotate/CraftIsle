@@ -52,6 +52,20 @@ fabricApi {
 	}
 }
 
+// Classes excluded from JaCoCo coverage:
+//   mixin/**    — bytecode injection; not accurately measurable
+//   client/**   — client-only code; not runnable in server-side test env
+//   block/**    — Level-dependent behavior; covered by GameTest, not unit tests
+//   item/**     — Level-dependent behavior; covered by GameTest, not unit tests
+//   worldgen/** — requires full MC server context; covered by GameTest, not unit tests
+def jacocoExcludes = [
+	'org/ponkotate/craftisle/mixin/**',
+	'org/ponkotate/craftisle/client/**',
+	'org/ponkotate/craftisle/block/**',
+	'org/ponkotate/craftisle/item/**',
+	'org/ponkotate/craftisle/worldgen/**',
+]
+
 jacocoTestReport {
 	dependsOn test
 	reports {
@@ -60,15 +74,17 @@ jacocoTestReport {
 	}
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: [
-				'org/ponkotate/craftisle/mixin/**',
-				'org/ponkotate/craftisle/client/**',
-			])
+			fileTree(dir: it, exclude: jacocoExcludes)
 		}))
 	}
 }
 
 jacocoTestCoverageVerification {
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: jacocoExcludes)
+		}))
+	}
 	violationRules {
 		rule {
 			limit {
