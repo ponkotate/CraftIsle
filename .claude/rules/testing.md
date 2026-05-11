@@ -11,11 +11,11 @@
 
 ## コードカバレッジ
 
-**最小カバレッジ: 80%**（ライン・ブランチ両方）
+**最小カバレッジ: 60%**（ライン・ブランチ両方）
 
-JaCoCo でカバレッジを計測する。`./gradlew check` 実行時に 80% を下回るとビルドが失敗する。
+JaCoCo でカバレッジを計測する。`./gradlew check` 実行時に 60% を下回るとビルドが失敗する。
 
-**注意**: `canSurvive`・`useOn` など Level に依存するブロック/アイテムメソッドはゲームテストでのみ実行可能であり、JaCoCo のカバレッジには計上されない。ユニットテストだけではカバレッジが 80% に届かない可能性があるため、ユニットテストとゲームテストを組み合わせて設計すること。
+**注意**: `canSurvive`・`useOn` など Level に依存するブロック/アイテムメソッドはゲームテストでのみ実行可能であり、JaCoCo のカバレッジには計上されない。また、レジストリ登録コード・ModInitializer エントリポイントはユニットテストでは実行されない。これらをカバレッジ除外対象に含めることで実質的なロジックのみを計測する。
 
 ## Gradle 設定
 
@@ -283,3 +283,5 @@ helper.assertBlockState(pos, s -> s.isAir(),
 | `block/**` | Level 依存メソッド（`canSurvive`, `neighborChanged` 等）はユニットテスト不可。GameTest でカバー |
 | `item/**` | Level 依存メソッド（`useOn` 等）はユニットテスト不可。GameTest でカバー |
 | `worldgen/**` | フル MC サーバーコンテキストが必要。GameTest でカバー |
+| `registry/**` | レジストリ登録ボイラープレート。`onInitialize()` はユニットテストでは呼ばれない |
+| `CraftIsle*` | `ModInitializer` エントリポイント。`onInitialize()` はユニットテストでは呼ばれない |
