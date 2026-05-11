@@ -3,7 +3,7 @@
 	"package": "org.ponkotate.craftisle.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin",
+		"BlockHardnessMixin",
 		"PackRepositoryMixin"
 	],
 	"injectors": {

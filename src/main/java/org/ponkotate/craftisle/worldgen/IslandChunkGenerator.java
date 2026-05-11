@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.ponkotate.craftisle.CraftIsle;
+import org.ponkotate.craftisle.block.PebbleBlock;
+import org.ponkotate.craftisle.registry.ModBlocks;
 
 public class IslandChunkGenerator extends ChunkGenerator {
 
@@ -52,6 +54,8 @@ public class IslandChunkGenerator extends ChunkGenerator {
     private volatile long noiseSeed1;
     private volatile long noiseSeed2;
     private volatile long noiseSeed3;
+    private volatile long pebbleSeed;
+    private volatile long plasticRopeSeed;
 
     public IslandChunkGenerator(BiomeSource biomeSource) {
         super(biomeSource);
@@ -77,6 +81,8 @@ public class IslandChunkGenerator extends ChunkGenerator {
                     noiseSeed1     = factory.fromHashOf("noise1").nextLong();
                     noiseSeed2     = factory.fromHashOf("noise2").nextLong();
                     noiseSeed3     = factory.fromHashOf("noise3").nextLong();
+                    pebbleSeed     = factory.fromHashOf("pebble").nextLong();
+                    plasticRopeSeed = factory.fromHashOf("plastic_rope").nextLong();
                     if (getBiomeSource() instanceof IslandBiomeSource islandBiomeSource) {
                         islandBiomeSource.setGridSeed(islandGridSeed);
                     }
@@ -90,7 +96,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
     // Value noise — bilinear interpolation with smoothstep
     // ─────────────────────────────────────────────────────────────
 
-    private static double hash2D(long seed, int x, int z) {
+    static double hash2D(long seed, int x, int z) {
         long h = seed;
         h ^= (long) x * 0x9e3779b97f4a7c15L;
         h ^= (long) z * 0x6c62272e07bb0142L;
@@ -102,7 +108,7 @@ public class IslandChunkGenerator extends ChunkGenerator {
         return (double) (h & 0xFFFFFFFFL) / (double) 0xFFFFFFFFL; // [0, 1]
     }
 
-    private static double valueNoise(long seed, double x, double z, int scale) {
+    static double valueNoise(long seed, double x, double z, int scale) {
         double sx = x / scale;
         double sz = z / scale;
         int xi = (int) Math.floor(sx);
@@ -239,6 +245,11 @@ public class IslandChunkGenerator extends ChunkGenerator {
                             chunk.setBlockState(mutablePos, sand);
                         }
                     }
+                    // ~3% chance to scatter washed-up rope on above-water beach sand
+                    if (topSolid >= SEA_LEVEL && hash2D(plasticRopeSeed, wx, wz) < 0.03) {
+                        mutablePos.set(wx, topSolid + 1, wz);
+                        chunk.setBlockState(mutablePos, ModBlocks.PLASTIC_ROPE.defaultBlockState());
+                    }
                 } else {
                     // Inland → grass cap + SOIL_DEPTH dirt layers
                     mutablePos.set(wx, topSolid, wz);
@@ -248,6 +259,12 @@ public class IslandChunkGenerator extends ChunkGenerator {
                             mutablePos.set(wx, topSolid - i, wz);
                             chunk.setBlockState(mutablePos, dirt);
                         }
+                    }
+                    // ~5% chance to scatter pebbles on inland grass
+                    if (hash2D(pebbleSeed, wx, wz) < 0.05) {
+                        mutablePos.set(wx, topSolid + 1, wz);
+                        int count = Math.min(4, (int)(hash2D(~pebbleSeed, wx, wz) * 4) + 1);
+                        chunk.setBlockState(mutablePos, ModBlocks.PEBBLE.defaultBlockState().setValue(PebbleBlock.COUNT, count));
                     }
                 }
             }

@@ -1,6 +1,7 @@
 plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id 'maven-publish'
+	id 'jacoco'
 }
 
 version = project.mod_version
@@ -33,7 +34,78 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
 }
+
+test {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "craft_isle_test"
+		enableGameTests = true
+		eula = true
+	}
+}
+
+// Classes excluded from JaCoCo coverage:
+//   mixin/**    — bytecode injection; not accurately measurable
+//   client/**   — client-only code; not runnable in server-side test env
+//   block/**    — Level-dependent behavior; covered by GameTest, not unit tests
+//   item/**     — Level-dependent behavior; covered by GameTest, not unit tests
+//   worldgen/** — requires full MC server context; covered by GameTest, not unit tests
+//   registry/** — registration boilerplate; entry points for mod initialization, not business logic
+//   CraftIsle*  — ModInitializer entry point; onInitialize() never called in unit tests
+def jacocoExcludes = [
+	'org/ponkotate/craftisle/mixin/**',
+	'org/ponkotate/craftisle/client/**',
+	'org/ponkotate/craftisle/block/**',
+	'org/ponkotate/craftisle/item/**',
+	'org/ponkotate/craftisle/worldgen/**',
+	'org/ponkotate/craftisle/registry/**',
+	'org/ponkotate/craftisle/CraftIsle*',
+]
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+	}
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: jacocoExcludes)
+		}))
+	}
+}
+
+jacocoTestCoverageVerification {
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: jacocoExcludes)
+		}))
+	}
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.60
+			}
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.60
+			}
+		}
+	}
+}
+
+check.dependsOn jacocoTestCoverageVerification
 
 processResources {
 	def version = project.version

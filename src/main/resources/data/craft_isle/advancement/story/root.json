@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:sand"
+    },
+    "title": {
+      "translate": "advancements.craft_isle.story.root.title"
+    },
+    "description": {
+      "translate": "advancements.craft_isle.story.root.description"
+    },
+    "background": "minecraft:block/blue_concrete_powder",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

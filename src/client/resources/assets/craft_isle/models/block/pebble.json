@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "craft_isle:block/pebble",
+    "all": "craft_isle:block/pebble"
+  },
+  "elements": [
+    {
+      "from": [1, 0, 1],
+      "to": [15, 2, 15],
+      "faces": {
+        "up":    { "uv": [1, 1, 15, 15], "texture": "#all" },
+        "down":  { "uv": [1, 1, 15, 15], "texture": "#all", "cullface": "down" },
+        "north": { "uv": [1, 14, 15, 16], "texture": "#all" },
+        "south": { "uv": [1, 14, 15, 16], "texture": "#all" },
+        "east":  { "uv": [1, 14, 15, 16], "texture": "#all" },
+        "west":  { "uv": [1, 14, 15, 16], "texture": "#all" }
+      }
+    }
+  ]
+}

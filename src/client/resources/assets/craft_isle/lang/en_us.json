@@ -1,3 +1,20 @@
 {
-  "generator.craft_isle.craft_isle": "Craft Isle"
+  "generator.craft_isle.craft_isle": "Craft Isle",
+  "advancements.craft_isle.story.root.title": "Craft Isle",
+  "advancements.craft_isle.story.root.description": "Start surviving on an island surrounded by the sea",
+  "advancements.craft_isle.story.first_steps.title": "First Things First",
+  "advancements.craft_isle.story.first_steps.description": "Collect pebbles that can be used for tool making",
+  "advancements.craft_isle.story.bare_hands.title": "Not With Bare Hands",
+  "advancements.craft_isle.story.bare_hands.description": "In this world, you cannot fell trees with your bare hands",
+  "advancements.craft_isle.story.get_stick.title": "Gather Sticks",
+  "advancements.craft_isle.story.get_stick.description": "Break leaves to collect sticks",
+  "advancements.craft_isle.story.first_blade.title": "First Blade",
+  "advancements.craft_isle.story.first_blade.description": "Craft a simple knife as your first step toward survival",
+  "block.craft_isle.pebble": "Pebble",
+  "item.craft_isle.pebble": "Pebble",
+  "item.craft_isle.stone_knife": "Stone Knife",
+  "item.craft_isle.oak_bark": "Oak Bark",
+  "item.craft_isle.birch_bark": "Birch Bark",
+  "block.craft_isle.plastic_rope": "Plastic Rope",
+  "item.craft_isle.plastic_rope": "Plastic Rope"
 }

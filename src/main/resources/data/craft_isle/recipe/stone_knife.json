@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["RS", "I "],
+  "key": {
+    "S": "craft_isle:pebble",
+    "R": "craft_isle:plastic_rope",
+    "I": "minecraft:stick"
+  },
+  "result": {
+    "id": "craft_isle:stone_knife",
+    "count": 1
+  }
+}

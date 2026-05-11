@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "count=1": { "model": "craft_isle:block/pebble_1" },
+    "count=2": { "model": "craft_isle:block/pebble_2" },
+    "count=3": { "model": "craft_isle:block/pebble_3" },
+    "count=4": { "model": "craft_isle:block/pebble_4" }
+  }
+}
